@@ -63,14 +63,14 @@ public class UserManagementService(IUserRepository users, IRoleRepository roles,
 
     public async Task<IReadOnlyList<string>> GetUserRolesAsync(string userId)
     {
-        var roleNames = await roles.GetUserRoleNameAsync(userId);
+        var roleNames = await roles.GetUserRoleNamesAsync(userId);
         return roleNames;
     }
 
     public async Task<IReadOnlyList<UserResponseDto>> GetUsersByRoleAsync(string roleName)
     {
         roleName = roleName?.Trim().ToUpperInvariant() ?? string.Empty;
-        var usersInRole = await roles.GetUsersByRolAsync(roleName);
+        var usersInRole = await roles.GetUsersByRoleAsync(roleName);
         return usersInRole.Select(u => new UserResponseDto
         {
             Id = u.Id,

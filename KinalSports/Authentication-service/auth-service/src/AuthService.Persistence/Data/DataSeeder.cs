@@ -1,4 +1,3 @@
-using System;
 using AuthService.Domain.Entities;
 using AuthService.Application.Services;
 using AuthService.Domain.Constants;
@@ -6,36 +5,38 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AuthService.Persistence.Data;
 
-//Esta clase se encarga de inicializar datos del sistema cuando la aplicacion se inicia por primera vez.
-//En terminos mas simples, crea roles y un usuario administrador si no existen. Pero si ya existen, no los vuelve a crear.
-public class DataSeeder
+public static class DataSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext context)
     {
-        if(!context.Roles.Any())
+        // Verificar si ya existen roles
+        if (!(context.Roles?.Any() ?? false))
         {
             var roles = new List<Role>
             {
-                new()
-                {
+                new() {
                     Id = UuidGenerator.GenerateRoleId(),
-                    Name = RoleConstants.USER_ROLE
+                        Name = RoleConstants.ADMIN_ROLE
                 },
-                new()
-                {
+                new() {
                     Id = UuidGenerator.GenerateRoleId(),
-                    Name = RoleConstants.ADMIN_ROLE
+                        Name = RoleConstants.USER_ROLE
                 }
             };
-            await context.Roles.AddRangeAsync(roles);
+
+            await context.Roles!.AddRangeAsync(roles);
             await context.SaveChangesAsync();
         }
-        if(!await context.Users.AnyAsync())
+
+        // Seed de un usuario administrador por defecto SOLO si no existen usuarios todavía
+        if (!(await (context.Users?.AnyAsync() ?? Task.FromResult(false))))
         {
-            var adminRole = await context.Roles.FirstOrDefaultAsync (r => r.Name == RoleConstants.ADMIN_ROLE);
-            if(adminRole != null)
+            // Buscar rol admin existente
+            var adminRole = await (context.Roles ?? throw new InvalidOperationException("Roles DbSet is null.")).FirstOrDefaultAsync(r => r.Name == RoleConstants.ADMIN_ROLE);
+            if (adminRole != null)
             {
                 var passwordHasher = new PasswordHashService();
+
                 var userId = UuidGenerator.GenerateUserId();
                 var profileId = UuidGenerator.GenerateUserId();
                 var emailId = UuidGenerator.GenerateUserId();
@@ -44,21 +45,19 @@ public class DataSeeder
                 var adminUser = new User
                 {
                     Id = userId,
-                    Name = "Admin Name",
-                    Surname = "Admin Surname",
+                    Name = "Admin",
+                    Surname = "User",
                     Username = "admin",
-                    Email = "admin@local.com",
-                    Password = passwordHasher.HashPassword("Kinal2026"),
+                    Email = "admin@ksports.local",
+                    Password = passwordHasher.HashPassword("Admin1234!"),
                     Status = true,
-
                     UserProfile = new UserProfile
                     {
                         Id = profileId,
                         UserId = userId,
                         ProfilePicture = string.Empty,
-                        Phone = "00000000"
+                        Phone = string.Empty
                     },
-
                     UserEmail = new UserEmail
                     {
                         Id = emailId,
@@ -67,18 +66,18 @@ public class DataSeeder
                         EmailVerificationToken = null,
                         EmailVerificationTokenExpiry = null
                     },
-
-                    UserRoles = 
-                    {
+                    UserRoles =
+                    [
                         new UserRole
                         {
                             Id = userRoleId,
                             UserId = userId,
-                            RoleId = adminRole.Id,
+                            RoleId = adminRole.Id
                         }
-                    }
+                    ]
                 };
-                await context.Users.AddAsync(adminUser);
+
+                await context.Users!.AddAsync(adminUser);
                 await context.SaveChangesAsync();
             }
         }

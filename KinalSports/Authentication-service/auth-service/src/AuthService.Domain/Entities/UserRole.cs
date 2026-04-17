@@ -1,4 +1,3 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace AuthService.Domain.Entities;
@@ -7,22 +6,23 @@ public class UserRole
 {
     [Key]
     [MaxLength(16)]
-    public string Id {get; set;} = string.Empty;
+    public string Id { get; set; } = string.Empty;
 
-    [Key]
+    [Required]
     [MaxLength(16)]
-    public String UserId {get; set;} = string.Empty;
+    public string UserId { get; set; } = string.Empty;
 
-    [Key]
+    [Required]
     [MaxLength(16)]
-    public String RoleId {get; set;} = string.Empty;
+    public string RoleId { get; set; } = string.Empty;
 
-    //Esto se realiza por buena practica para auditoria
+    [Required]
+    public User User { get; set; } = null!;
 
-    public DateTime CreatedAt {get; set;} = DateTime.UtcNow;
-    public DateTime UpdatedAt {get; set;} = DateTime.UtcNow;
+    [Required]
+    public Role Role { get; set; } = null!;
 
-    public User User {get;  set;} = null!; // SE COLOCA EL SIGNO DE EXLAMACION DE CIERRE POR SI VIENE NULO O NO LO IGNORE
-
-    public Role Role {get; set;} = null!; // SE COLOCA EL SIGNO DE EXLAMACION DE CIERRE POR SI VIENE NULO O NO LO IGNORE
+    // Timestamps to align with DB schema (NOT NULL)
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }

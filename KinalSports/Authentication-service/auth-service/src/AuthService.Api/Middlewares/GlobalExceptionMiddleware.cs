@@ -17,11 +17,17 @@ public class GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExcep
         {
             await next(context);
         }
-        catch (Exception ex)
+        catch (BusinessException ex)
         {
-            logger.LogError(ex, "An unhandled exception occurred");
+            logger.LogWarning(ex, "Business exception caught: {Message}", ex.Message);
             await HandleExceptionAsync(context, ex);
         }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unhandled server exception occurred");
+            await HandleExceptionAsync(context, ex);
+        }
+
     }
 
     private static async Task HandleExceptionAsync(HttpContext context, Exception exception)

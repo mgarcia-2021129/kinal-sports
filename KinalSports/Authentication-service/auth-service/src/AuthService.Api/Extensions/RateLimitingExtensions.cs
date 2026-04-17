@@ -16,7 +16,7 @@ public static class RateLimitingExtensions
                     factory: partition => new FixedWindowRateLimiterOptions
                     {
                         AutoReplenishment = true,
-                        PermitLimit = 5, // 5 intentos
+                        PermitLimit = 30, // 30 intentos (less aggressive for testing)
                         Window = TimeSpan.FromMinutes(1) // por minuto
                     }));
 

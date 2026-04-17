@@ -4,8 +4,6 @@ using System.Security.Cryptography;
 using System.Text;
 namespace AuthService.Application.Services;
 
-
-//Esta clase Hashea contraseñas usando Argon2id
 public class PasswordHashService : IPasswordHashService
 {
     // Configuración idéntica a Node.js para compatibilidad

@@ -3,7 +3,6 @@ using System.Text;
 
 namespace AuthService.Application.Services;
 
-//Esta clase genera IDs unicos y cortos para usuarios y roles en el sistema de autenticación.
 public static class UuidGenerator
 {
     // Caracteres seguros (sin 0, O, I, l para evitar confusión)
@@ -29,7 +28,6 @@ public static class UuidGenerator
         return $"usr_{GenerateShortUUID()}";
     }
 
-    
     public static string GenerateRoleId()
     {
         return $"rol_{GenerateShortUUID()}";

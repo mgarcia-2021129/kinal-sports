@@ -1,79 +1,79 @@
-using System;
 using AuthService.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using Org.BouncyCastle.Bcpg;
+using System.Linq;
+
 namespace AuthService.Persistence.Data;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
-    public DbSet<User> Users {get; set;}
+    public DbSet<User>? Users { get; set; }
+    public DbSet<UserProfile>? UserProfiles { get; set; }
+    public DbSet<Role>? Roles { get; set; }
+    public DbSet<UserRole>? UserRoles { get; set; }
+    public DbSet<UserEmail>? UserEmails { get; set; }
+    public DbSet<UserPasswordReset>? UserPasswordResets { get; set; }
+    public DbSet<RefreshToken>? RefreshTokens { get; set; }
 
-    public DbSet<Role> Roles {get; set;}
-
-    public DbSet<UserRole> UserRoles {get; set;}
-
-    public DbSet<UserProfile> UserProfiles {get; set;}
-
-    public DbSet<UserEmail> UserEmails {get; set;}
-
-    public DbSet<UserPasswordReset> UserPasswordResets {get; set;}
-
-    //Renombrar la entidad usando snake_case
-    public static string ToSnakeCase(string input)
-    {
-        if(string.IsNullOrEmpty(input))
-            return input;
-        
-        return string.Concat(
-            input.Select((c, i) => i > 0 && char.IsUpper(c) ? "_" + c : c.ToString())
-            ).ToLower();
-    }
-    //Sobrecarga el metodo que nos va permitir conectarnos a la base de datos.
-    //Metodo que fuerza convencion global en tablas, columnas, llaves etc a usar snake_case.
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder); //Esto hace una herencia a la clase padre, y le pasa los parametos necsarios al metodo
-
-        foreach(var entity in modelBuilder.Model.GetEntityTypes())
+        // Configuración de RefreshToken
+        modelBuilder.Entity<RefreshToken>(entity =>
         {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TokenHash).IsRequired();
+            entity.HasIndex(e => e.TokenHash).IsUnique();
+            entity.HasIndex(e => e.FamilyId);
+            entity.Property(e => e.ExpiresAt).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(16);
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.RefreshTokens)
+                .HasForeignKey(e => e.UserId);
+        });
+        base.OnModelCreating(modelBuilder);
+
+        // Configurar nomenclatura snake_case para todas las tablas y columnas
+        foreach (var entity in modelBuilder.Model.GetEntityTypes())
+        {
+            // Nombre de tabla en snake_case
             var tableName = entity.GetTableName();
-            //Snake Case para nombre de las tablas
-            if(!string.IsNullOrEmpty(tableName))
+            if (!string.IsNullOrEmpty(tableName))
             {
                 entity.SetTableName(ToSnakeCase(tableName));
             }
-            //Snake Case para nombre de las columnas
-            foreach(var property in entity.GetProperties())
+
+            // Nombres de columnas en snake_case
+            foreach (var property in entity.GetProperties())
             {
                 var columnName = property.GetColumnName();
-                if(!string.IsNullOrEmpty(columnName))
+                if (!string.IsNullOrEmpty(columnName))
                 {
                     property.SetColumnName(ToSnakeCase(columnName));
                 }
             }
-            //Foreing Key con snake case y Primary Key con snake case
-            foreach(var key in entity.GetForeignKeys())
+
+            // Nombres de claves foráneas en snake_case
+            foreach (var key in entity.GetKeys())
             {
-                var keyName = key.GetConstraintName();
-                if(!string.IsNullOrEmpty(keyName))
+                var keyName = key.GetName();
+                if (!string.IsNullOrEmpty(keyName))
                 {
-                    key.SetConstraintName(ToSnakeCase(keyName));
+                    key.SetName(ToSnakeCase(keyName));
                 }
             }
-            //Indexes con snake case
-            foreach(var index in entity.GetIndexes())
+
+            // Nombres de índices en snake_case
+            foreach (var index in entity.GetIndexes())
             {
                 var indexName = index.GetDatabaseName();
-                if(!string.IsNullOrEmpty(indexName))
+                if (!string.IsNullOrEmpty(indexName))
                 {
                     index.SetDatabaseName(ToSnakeCase(indexName));
                 }
             }
-            
         }
-        // Empezamos a configurar las entidades (crear) 
-        // Mapeo entre User y la base de datos
-        //Configruracion de la entidad User
+
+        // Configuración de la entidad User
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -87,8 +87,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .IsRequired()
                 .HasMaxLength(25);
             entity.Property(e => e.Username)
-                .IsRequired()
-                .HasMaxLength(20);
+                .IsRequired();
             entity.Property(e => e.Email)
                 .IsRequired();
             entity.Property(e => e.Password)
@@ -100,27 +99,23 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .IsRequired();
             entity.Property(e => e.UpdatedAt)
                 .IsRequired();
-            //Indices para la optimizacion de busquedas
-            // es decir crea indices unicos en username y email
-            entity.HasIndex(e => e.Username).IsUnique();   
+            entity.HasIndex(e => e.Username).IsUnique();
             entity.HasIndex(e => e.Email).IsUnique();
-            
-            //Relaciones
+            // Relaciones
+            entity.HasOne(e => e.UserProfile)
+                .WithOne(p => p.User)
+                .HasForeignKey<UserProfile>(p => p.UserId);
             entity.HasMany(e => e.UserRoles)
                 .WithOne(ur => ur.User)
                 .HasForeignKey(ur => ur.UserId);
-            entity.HasOne(e => e.UserProfile)
-                .WithOne(up => up.User)
-                .HasForeignKey<UserProfile>(up => up.UserId);
             entity.HasOne(e => e.UserEmail)
                 .WithOne(ue => ue.User)
                 .HasForeignKey<UserEmail>(ue => ue.UserId);
             entity.HasOne(e => e.UserPasswordReset)
-                .WithOne(up => up.User)
-                .HasForeignKey<UserPasswordReset>(up => up.UserId);
+                .WithOne(upr => upr.User)
+                .HasForeignKey<UserPasswordReset>(upr => upr.UserId);
         });
-        
-        //Configuracion de la entidad Role
+
         // Configuración de UserProfile
         modelBuilder.Entity<UserProfile>(entity =>
         {
@@ -146,9 +141,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .IsRequired();
             entity.Property(e => e.UpdatedAt)
                 .IsRequired();
-            entity.HasMany(e => e.UserRoles)
-                .WithOne(ur => ur.Role)
-                .HasForeignKey(ur => ur.RoleId);
         });
 
         // Configuración de UserRole
@@ -186,6 +178,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(e => e.EmailVerified).HasDefaultValue(false);
             entity.Property(e => e.EmailVerificationToken).HasMaxLength(256);
         });
+
         // Configuración de UserPasswordReset
         modelBuilder.Entity<UserPasswordReset>(entity =>
         {
@@ -195,40 +188,49 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .ValueGeneratedOnAdd();
             entity.Property(e => e.UserId)
                 .HasMaxLength(16);
-            entity.Property(e => e.PasswordResetToken)
-                .HasMaxLength(255);
+            entity.Property(e => e.PasswordResetToken).HasMaxLength(256);
         });
     }
 
-    // Aca se manejan las entidades que tendran auditoria
-    // Estas controlan cuando se crean o modifican los registros
-    private void UpdateTimeStamp()
+    public override int SaveChanges()
+    {
+        UpdateTimestamps();
+        return base.SaveChanges();
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        UpdateTimestamps();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void UpdateTimestamps()
     {
         var entries = ChangeTracker.Entries()
-        .Where(e => (e.Entity is User || e.Entity is Role || e.Entity is UserRole)
-            && (e.State == EntityState.Added || e.State == EntityState.Modified));
+            .Where(e => (e.Entity is User || e.Entity is Role || e.Entity is UserRole)
+                        && (e.State == EntityState.Added || e.State == EntityState.Modified));
 
         foreach (var entry in entries)
         {
             if (entry.Entity is User user)
             {
-                if(entry.State == EntityState.Added)
+                if (entry.State == EntityState.Added)
                 {
                     user.CreatedAt = DateTime.UtcNow;
                 }
                 user.UpdatedAt = DateTime.UtcNow;
             }
-            if (entry.Entity is Role role)
+            else if (entry.Entity is Role role)
             {
-                if(entry.State == EntityState.Added)
+                if (entry.State == EntityState.Added)
                 {
                     role.CreatedAt = DateTime.UtcNow;
                 }
                 role.UpdatedAt = DateTime.UtcNow;
             }
-            if (entry.Entity is UserRole userRole)
+            else if (entry.Entity is UserRole userRole)
             {
-                if(entry.State == EntityState.Added)
+                if (entry.State == EntityState.Added)
                 {
                     userRole.CreatedAt = DateTime.UtcNow;
                 }
@@ -237,11 +239,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         }
     }
 
-    //Este sobreescribe  el metodo SaveChangesAsync para ejecutar la logica de auditoria.
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    private static string ToSnakeCase(string input)
     {
-        UpdateTimeStamp();
-        return base.SaveChangesAsync(cancellationToken);
-    }
-    }
+        if (string.IsNullOrEmpty(input))
+            return input;
 
+        return string.Concat(input.Select((c, i) => i > 0 && char.IsUpper(c) ? "_" + c : c.ToString())).ToLower();
+    }
+}
