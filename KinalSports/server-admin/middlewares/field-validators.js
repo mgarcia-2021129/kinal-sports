@@ -34,7 +34,6 @@ export const validateCreateField = [
   checkValidators,
 ];
 
-
 export const validateUpdateFieldRequest = [
   validateJWT,
   param('id')
