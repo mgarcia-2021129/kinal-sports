@@ -1,65 +1,22 @@
-# Node.js dependencies
+# Node.js / React (npm y pnpm)
 node_modules/
+.pnpm-store/
+build/
+dist/
 
-# Logs
-logs/
-*.log
-
-# Visual Studio / .NET
+# .NET
 bin/
 obj/
+*.dll
+*.pdb
+*.cache
+*.log
 *.user
 *.suo
 *.vs/
 
-# Rider IDE
-.idea/
-
-# DotNet Core
-*.dll
-*.exe
-*.pdb
-*.cache
-*.class
-*.so
-*.dylib
-
-# DotNet publish output
-publish/
-
-# User-specific files
-*.rsuser
-*.dotCover
-
-# Coverage results
-coverage/
-*.lcov
-
-# VS Code
-.vscode/
-
-# npm logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# dotenv environment variables file
-.env
-
-# Build output
-dist/
-build/
-
-# Ignore pnpm store
-.pnpm-store/
-
-# Ignore pnpm lockfile if you don't want to version it
-pnpm-lock.yaml
-
-# Ignore OS files
+# General
 .DS_Store
 Thumbs.db
-
-# Ignore temporary files
-*.tmp
-*.temp
+.vscode/
+.idea/
