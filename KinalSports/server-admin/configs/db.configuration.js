@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
- 
+
 export const dbConnection = async () => {
     try{
         mongoose.connection.on('error', () => {
@@ -16,30 +16,29 @@ export const dbConnection = async () => {
             console.log('Mongo DB | Conectado a la base de datos');
         });
         mongoose.connection.on('reconnected', () => {
-            console.log('Mongo DB | Reconectando a mongo DB');
+            console.log('Mongo DB | Reconectado a mongo DB');
         });
         mongoose.connection.on('disconnected', () => {
             console.log('Mongo DB | Desconectado de mongo DB');
-            mongoose.disconnect();
         });
         await mongoose.connect(process.env.URI_MONGODB,{
             serverSelectionTimeoutMS: 5000,
             maxPoolSize: 10,
-        })
+        });
     }catch(err){
-        console.error(`Kinal Sports - Error al conectar la db: ${err.message}`);
+        console.error(`Kinal Sports - Error al conectar la db: ${err.message}`)
         process.exit(1);
     }
 }
 
 const gracefulShutdown = async (signal) => {
     console.log(`Mongo DB | Recibida señal de ${signal}, cerrando conexión a mongo DB...`);
-    try {
+    try{
         await mongoose.disconnect();
-        console.log(`Mongo DB | Conexión cerrada exitosamente`);
+        console.log('Mongo DB | Conexión cerrada exitosamente')
         process.exit(0);
-    } catch (err) {
-        console.error(`Mongo DB | Error durante el cierre de la conexión: ${err.message}`);
+    }catch(err){
+        console.error(`Mongo DB | Error durante el cierre de la conexión: ${err.message}`)
         process.exit(1);
     }
 }

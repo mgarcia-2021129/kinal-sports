@@ -1,5 +1,5 @@
 export const helmetOptions = {
-    contentSecurityPolicy: {
+    contentSecurityPolicy:{
         useDefaults: true,
         directives:{
             defaultSrc: ["'self'"],
@@ -7,7 +7,7 @@ export const helmetOptions = {
             styleSrc: ["'self'", "'unsafe-inline'"],
             imgSrc: ["'self'", 'data:', 'blob:'],
             connectSrc: ["'self'"],
-            fontSrc: ["'self'"],
+            fontSrc:["'self'"],
             objectSrc: ["'none'"],
             baseUri: ["'self'"],
             frameAncestors: ["'none'"]
@@ -18,5 +18,4 @@ export const helmetOptions = {
     hidePoweredBy: true,
     crossOriginResourcePolicy: {policy: 'cross-origin'},
     crossOriginEmbedderPolicy: false,
-
 };
